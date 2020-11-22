@@ -1,10 +1,12 @@
 #![allow(non_camel_case_types)]
 
+use crate::*;
+
+#[derive(Debug)]
 enum Instruction {
     // Load
     LD_B_d8,
     LD_C_d8,
-    LD_BC_nn,
     LD_BC_d16,
     LD_BC_A,
     LD_A_BC,
@@ -48,6 +50,7 @@ enum Instruction {
 
     // Jumps
     JR_r8,
+    JP_a16,
 
     // Unknown
     Invalid,
@@ -95,38 +98,179 @@ impl Instruction {
     }
 }
 
+#[derive(Debug)]
 struct Registers {
     a: u8,
-    flags: u8,
+    /// Flags register
+    f: u8,
     b: u8,
     c: u8,
     d: u8,
     e: u8,
     h: u8,
     l: u8,
+    /// Program Counter
     pc: u16,
+    /// Stack Pointer
     sp: u16,
 }
 
-struct CPU {
-    registers: Registers
+impl Registers {
+    pub fn init() -> Registers {
+        // Initial values for registers obtained from Pandocs
+        Registers {
+            a: 0x01,
+            f: 0xB0,
+            b: 0x00,
+            c: 0x13,
+            d: 0x00,
+            e: 0xD8,
+            h: 0x01,
+            l: 0x4D,
+            pc: 0x0100, // ROM data starts at 0x0100, ignoring the bootloader checks
+            sp: 0xFFFE,
+        }
+    }
+
+    pub fn read_af(&self) -> u16 {
+        unsigned_16(self.f, self.a)
+    }
+
+    pub fn read_bc(&self) -> u16 {
+        unsigned_16(self.c, self.b)
+    }
+
+    pub fn read_de(&self) -> u16 {
+        unsigned_16(self.e, self.d)
+    }
+
+    pub fn read_hl(&self) -> u16 {
+        unsigned_16(self.l, self.h)
+    }
+
+    pub fn write_af(&mut self, data: u16) {
+        let u8s = data.split();
+        self.a = u8s.0;
+        self.f = u8s.1;
+    }
+
+    pub fn write_bc(&mut self, data: u16) {
+        let u8s = data.split();
+        self.b = u8s.0;
+        self.c = u8s.1;
+    }
+
+    pub fn write_de(&mut self, data: u16) {
+        let u8s = data.split();
+        self.d = u8s.0;
+        self.e = u8s.1;
+    }
+
+    pub fn write_hl(&mut self, data: u16) {
+        let u8s = data.split();
+        self.h = u8s.0;
+        self.l = u8s.1;
+    }
+}
+
+struct Clock {
+    cycles: u8,
+}
+
+impl Clock {
+    pub fn init() -> Clock {
+        Clock { cycles: 0 }
+    }
+}
+
+#[derive(Debug)]
+pub struct Memory {
+    // 0x0000 ~ 0x7FFF
+    rom: [u8; _32KB],
+    // 0x8000 ~ 0xFFFF
+    ram: [u8; _32KB],
+    // TODO: Implement all memory regions
+}
+
+impl Memory {
+    pub fn new(program: [u8; _32KB]) -> Memory {
+        Memory {
+            // Over-simplified to enable us to move on
+            rom: program,
+            ram: [0; _32KB], // TODO: Should we use Vec<u8> instead of [u8; _32KB]?
+        }
+    }
+
+    pub fn read(&self, address: u16) -> u8 {
+        // TODO: Access to some regions should be protected
+        match address {
+            0x0000..=0x7FFF => self.rom[address as usize],
+            _ => self.ram[address as usize]
+        }
+    }
+
+    pub fn write(&mut self, address: u16, data: u8) {
+        // TODO: Access to some regions should be protected
+        match address {
+            // ROM data
+            0x0000..=0x7FFF => panic!("Forbidden write into ROM memory region!"),
+            _ => self.ram[address as usize] = data
+        }
+    }
+}
+
+pub struct CPU {
+    memory: Memory,
+    registers: Registers,
+    clock: Clock,
 }
 
 impl CPU {
-    pub fn init() {
-
+    pub fn new(memory: Memory) -> CPU {
+        CPU {
+            memory,
+            registers: Registers::init(),
+            clock: Clock::init(),
+        }
     }
 
-    fn fetch() -> Instruction {
-
+    pub fn init(&mut self) {
+        loop {
+            let data = self.fetch();
+            let ins = Instruction::decode(data);
+            self.execute(ins);
+        }
     }
 
-    fn execute(ins: Instruction) {
+    fn fetch(&mut self) -> u8 {
+        let data = self.memory.read(self.registers.pc);
+        self.registers.pc += 1;
+        data
+    }
+
+    fn execute(&mut self, ins: Instruction) {
         match ins {
-            Instruction::NOP => {}
-            Instruction::LD_BC_A => {}
-            Instruction::LD_BC_nn => {}
+            Instruction::NOP => {
+                self.clock.cycles += 1
+            }
             Instruction::STOP => {}
+            Instruction::LD_B_d8 => {
+                let data = self.fetch();
+                self.registers.b = data;
+                self.clock.cycles += 2;
+            }
+
+            Instruction::LD_BC_d16 => {
+                let data = unsigned_16(self.fetch(), self.fetch());
+                self.registers.write_bc(data);
+                self.clock.cycles += 3;
+            }
+
+            Instruction::LD_BC_A => {
+                self.memory.write(self.registers.read_bc(), self.registers.a);
+                self.clock.cycles += 2;
+            }
+
             Instruction::Invalid => {}
             _ => {}
         }
