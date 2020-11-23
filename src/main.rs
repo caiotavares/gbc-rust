@@ -1,5 +1,6 @@
 use gbc::_32KB;
-use gbc::cpu::{CPU, Memory};
+use gbc::cpu::CPU;
+use gbc::memory::Memory;
 
 fn main() {
     let mut program: [u8; _32KB] = [0; _32KB]; // TODO: Read from file

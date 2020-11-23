@@ -1,4 +1,6 @@
 pub mod cpu;
+pub mod memory;
+pub mod instructions;
 
 pub const _64KB: usize = 65536;
 pub const _32KB: usize = 32767;
