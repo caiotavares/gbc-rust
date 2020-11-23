@@ -150,26 +150,26 @@ impl Registers {
 
     pub fn write_af(&mut self, data: u16) {
         let u8s = data.split();
-        self.a = u8s.0;
-        self.f = u8s.1;
+        self.f = u8s.0;
+        self.a = u8s.1;
     }
 
     pub fn write_bc(&mut self, data: u16) {
         let u8s = data.split();
-        self.b = u8s.0;
-        self.c = u8s.1;
+        self.c = u8s.0;
+        self.b = u8s.1;
     }
 
     pub fn write_de(&mut self, data: u16) {
         let u8s = data.split();
-        self.d = u8s.0;
-        self.e = u8s.1;
+        self.e = u8s.0;
+        self.d = u8s.1;
     }
 
     pub fn write_hl(&mut self, data: u16) {
         let u8s = data.split();
-        self.h = u8s.0;
-        self.l = u8s.1;
+        self.l = u8s.0;
+        self.h = u8s.1;
     }
 }
 

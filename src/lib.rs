@@ -19,6 +19,6 @@ impl Splitable for u16 {
     fn split(&self) -> (u8, u8) {
         let msb: u8 = (self >> 8) as u8;
         let lsb: u8 = self as u8;
-        (msb, lsb)
+        (lsb, msb)
     }
 }
