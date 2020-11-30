@@ -7,12 +7,22 @@ pub enum Instruction {
     LD_C_d8,
     LD_BC_d16,
     LD_BC_A,
+
     LD_A_BC,
     LD_A_DE,
+
     LD_D_d8,
     LD_E_d8,
     LD_DE_d16,
     LD_DE_A,
+
+    LD_H_d8,
+    LD_L_d8,
+    LD_HL_d16,
+    LD_HL_A_Plus,
+    LD_HL_A_Minus,
+    LD_A_HL_Plus,
+    LD_A_HL_Minus,
 
     LD_a16_SP,
 
@@ -20,17 +30,31 @@ pub enum Instruction {
     INC_B,
     INC_C,
     INC_BC,
+
     INC_D,
     INC_E,
     INC_DE,
+
+    INC_H,
+    INC_L,
+    INC_HL,
 
     // Decrement
     DEC_B,
     DEC_C,
     DEC_BC,
+
     DEC_D,
     DEC_E,
     DEC_DE,
+
+    DEC_H,
+    DEC_L,
+    DEC_HL,
+
+    // Something
+    DAA,
+    CPL,
 
     // Rotation & Shifts
     RLCA,
@@ -41,6 +65,7 @@ pub enum Instruction {
     // Addition
     ADD_HL_BC,
     ADD_HL_DE,
+    ADD_HL_HL,
 
     // Stop/Halt
     STOP,
@@ -48,6 +73,8 @@ pub enum Instruction {
 
     // Jumps
     JR_r8,
+    JR_NZ_r8,
+    JR_Z_r8,
     JP_a16,
 
     // Unknown
@@ -90,6 +117,23 @@ impl Instruction {
             0x1D => Instruction::DEC_E,
             0x1E => Instruction::LD_E_d8,
             0x1F => Instruction::RRA,
+
+            0x20 => Instruction::JR_NZ_r8,
+            0x21 => Instruction::LD_HL_d16,
+            0x22 => Instruction::LD_HL_A_Plus,
+            0x23 => Instruction::INC_HL,
+            0x24 => Instruction::INC_H,
+            0x25 => Instruction::DEC_H,
+            0x26 => Instruction::LD_H_d8,
+            0x27 => Instruction::DAA,
+            0x28 => Instruction::JR_Z_r8,
+            0x29 => Instruction::ADD_HL_HL,
+            0x2A => Instruction::LD_A_HL_Minus,
+            0x2B => Instruction::DEC_HL,
+            0x2C => Instruction::INC_L,
+            0x2D => Instruction::DEC_L,
+            0x2E => Instruction::LD_L_d8,
+            0x2F => Instruction::CPL,
 
             _ => Instruction::Invalid
         }
