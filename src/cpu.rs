@@ -36,6 +36,8 @@ impl Registers {
         }
     }
 
+    pub fn set_flags(&self, z: Option<bool>, n: Option<bool>, h: Option<bool>, c: Option<bool>) {}
+
     pub fn read_af(&self) -> u16 {
         unsigned_16(self.f, self.a)
     }
@@ -121,10 +123,16 @@ impl CPU {
             Instruction::NOP => {
                 self.clock.cycles += 1
             }
+
             Instruction::STOP => {}
+
             Instruction::LD_B_d8 => {
-                let data = self.fetch();
-                self.registers.b = data;
+                self.registers.b = self.fetch();
+                self.clock.cycles += 2;
+            }
+
+            Instruction::LD_C_d8 => {
+                self.registers.c = self.fetch();
                 self.clock.cycles += 2;
             }
 
@@ -139,7 +147,40 @@ impl CPU {
                 self.clock.cycles += 2;
             }
 
+            Instruction::LD_D_d8 => {
+                self.registers.d = self.fetch();
+                self.clock.cycles += 2;
+            }
+
+            Instruction::LD_E_d8 => {
+                self.registers.e = self.fetch();
+                self.clock.cycles += 2;
+            }
+
+            Instruction::LD_DE_d16 => {
+                let data = unsigned_16(self.fetch(), self.fetch());
+                self.registers.write_de(data);
+                self.clock.cycles += 3;
+            }
+
+            Instruction::LD_DE_A => {
+                self.memory.write(self.registers.read_de(), self.registers.a);
+                self.clock.cycles += 2;
+            }
+
+            Instruction::INC_E => {
+                if self.registers.e == 0xFF {
+                    self.registers.e = 0x00;
+                    self.registers.set_flags(Some(true), Some(false), Some(true), None);
+                } else {
+                    self.registers.e += 1;
+                    self.registers.set_flags(None, Some(false), None, None);
+                }
+                self.clock.cycles += 1;
+            }
+
             Instruction::Invalid => {}
+
             _ => {}
         }
     }

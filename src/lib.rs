@@ -2,11 +2,14 @@ pub mod cpu;
 pub mod memory;
 pub mod instructions;
 
-pub const _64KB: usize = 65536;
-pub const _32KB: usize = 32767;
-pub const _16KB: usize = 16384;
-pub const _8KB: usize = 8192;
-pub const _4KB: usize = 4096;
+pub const _128KB: usize = 128 * _1KB;
+pub const _64KB: usize = 64 * _1KB;
+pub const _32KB: usize = 32 * _1KB;
+pub const _16KB: usize = 16 * _1KB;
+pub const _8KB: usize = 8 * _1KB;
+pub const _4KB: usize = 4 * _1KB;
+pub const _2KB: usize = 2 * _1KB;
+pub const _1KB: usize = 1024;
 
 pub fn unsigned_16(lsb: u8, msb: u8) -> u16 {
     let value: u16 = 0x0000;
