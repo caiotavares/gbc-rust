@@ -11,6 +11,10 @@ pub const _4KB: usize = 4 * _1KB;
 pub const _2KB: usize = 2 * _1KB;
 pub const _1KB: usize = 1024;
 
+pub const Hz: usize = 1;
+pub const kHz: usize = 1024 * Hz;
+pub const MHz: usize = 1024 * kHz;
+
 pub fn unsigned_16(lsb: u8, msb: u8) -> u16 {
     let value: u16 = 0x0000;
     (value | lsb) | (msb << 8)

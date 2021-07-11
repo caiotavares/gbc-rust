@@ -2,6 +2,8 @@ use crate::*;
 use crate::memory::Memory;
 use crate::instructions::Instruction;
 
+const CLOCK: f32 = 8.388608 * MHz;
+
 #[derive(Debug)]
 struct Registers {
     a: u8,
@@ -21,7 +23,7 @@ struct Registers {
 
 impl Registers {
     pub fn init() -> Registers {
-        // Initial values for registers obtained from Pandocs
+        /// Initial values for registers obtained from Pandocs
         Registers {
             a: 0x01,
             f: 0xB0,
@@ -36,7 +38,10 @@ impl Registers {
         }
     }
 
-    pub fn set_flags(&self, z: Option<bool>, n: Option<bool>, h: Option<bool>, c: Option<bool>) {}
+    pub fn set_flags(&self, z: Option<bool>, n: Option<bool>, h: Option<bool>, c: Option<bool>) {
+        let current_state = self.f;
+        let new_state: u8 = 0x00;
+    }
 
     pub fn read_af(&self) -> u16 {
         unsigned_16(self.f, self.a)
@@ -81,11 +86,12 @@ impl Registers {
 
 struct Clock {
     cycles: u8,
+    clock_speed: usize
 }
 
 impl Clock {
     pub fn init() -> Clock {
-        Clock { cycles: 0 }
+        Clock { cycles: 0, clock_speed: CLOCK as usize }
     }
 }
 
