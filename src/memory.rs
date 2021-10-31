@@ -1,6 +1,5 @@
 use crate::{_32KB, _8KB, _4KB};
 
-
 pub struct IO {
     memory_range: [u8; 127],
     // TODO: Set each peripheral its own memory address

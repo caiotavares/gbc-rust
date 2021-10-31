@@ -1,6 +1,9 @@
 pub mod cpu;
 pub mod memory;
 pub mod instructions;
+pub mod display;
+pub mod sound;
+pub mod gpu;
 
 pub const _128KB: usize = 128 * _1KB;
 pub const _64KB: usize = 64 * _1KB;

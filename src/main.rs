@@ -3,7 +3,6 @@ use gbc::cpu::CPU;
 use gbc::memory::Memory;
 use std::fs;
 
-
 fn read_program() -> Vec<u8> {
     fs::read("./tests/fixtures/program.bin").expect("Could not read program data")
 }
