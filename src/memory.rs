@@ -12,12 +12,12 @@ pub struct Memory {
     /// 0x8000 ~ 0x9FFF
     vram: [u8; _8KB],
     /// 0xA000 ~ 0xBFFF External RAM
-    ram: [u8; _8KB],
+    ram: [u8; _32KB],
     /// 0xC000 ~ 0xCFFF WRAM
     wram1: [u8; _4KB],
     /// 0xD000 ~ 0xDFFF WRAM
     wram2: [u8; _4KB],
-    /// 0xFF00 ~ 0xFF7F I/O Registers
+    // 0xFF00 ~ 0xFF7F I/O Registers
     // io: [u8; 127],
 
 }

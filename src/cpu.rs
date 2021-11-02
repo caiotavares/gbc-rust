@@ -2,7 +2,7 @@ use crate::*;
 use crate::memory::Memory;
 use crate::instructions::Instruction;
 
-const CLOCK: f32 = 8.388608 * MHz;
+const CLOCK: f32 = 8.388608;
 
 #[derive(Debug)]
 struct Registers {

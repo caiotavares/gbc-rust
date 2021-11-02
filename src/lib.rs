@@ -20,17 +20,17 @@ pub const MHz: usize = 1024 * kHz;
 
 pub fn unsigned_16(lsb: u8, msb: u8) -> u16 {
     let value: u16 = 0x0000;
-    (value | lsb) | (msb << 8)
+    (value | (lsb as u16)) | ((msb as u16) << 8)
 }
 
 pub trait Splitable {
-    fn split(&self);
+    fn split(&self) -> (u8,u8);
 }
 
 impl Splitable for u16 {
     fn split(&self) -> (u8, u8) {
         let msb: u8 = (self >> 8) as u8;
-        let lsb: u8 = self as u8;
+        let lsb: u8 = *self as u8;
         (lsb, msb)
     }
 }
