@@ -14,4 +14,4 @@ Cargo.lock
 
 # Editor
 .idea
-./roms
+roms
