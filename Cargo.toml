@@ -8,5 +8,6 @@ edition = "2018"
 [dependencies]
 winit = "0.25.0"
 wgpu = "0.11.0"
-sdl2 = "0.35.1"
+# sdl2 = "0.36.0"
 pixels = "0.7.0"
+

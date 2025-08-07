@@ -111,6 +111,7 @@ impl CPU {
     }
 
     pub fn init(&mut self) {
+        /// TODO: Should this be constrained according to CPU clock?
         loop {
             let data = self.fetch();
             let ins = Instruction::decode(data);
@@ -132,17 +133,17 @@ impl CPU {
 
             Instruction::STOP => {}
 
-            Instruction::LD_B_d8 => {
+            Instruction::LD_B_u8 => {
                 self.registers.b = self.fetch();
                 self.clock.cycles += 2;
             }
 
-            Instruction::LD_C_d8 => {
+            Instruction::LD_C_u8 => {
                 self.registers.c = self.fetch();
                 self.clock.cycles += 2;
             }
 
-            Instruction::LD_BC_d16 => {
+            Instruction::LD_BC_u16 => {
                 let data = unsigned_16(self.fetch(), self.fetch());
                 self.registers.write_bc(data);
                 self.clock.cycles += 3;
@@ -153,17 +154,17 @@ impl CPU {
                 self.clock.cycles += 2;
             }
 
-            Instruction::LD_D_d8 => {
+            Instruction::LD_D_u8 => {
                 self.registers.d = self.fetch();
                 self.clock.cycles += 2;
             }
 
-            Instruction::LD_E_d8 => {
+            Instruction::LD_E_u8 => {
                 self.registers.e = self.fetch();
                 self.clock.cycles += 2;
             }
 
-            Instruction::LD_DE_d16 => {
+            Instruction::LD_DE_u16 => {
                 let data = unsigned_16(self.fetch(), self.fetch());
                 self.registers.write_de(data);
                 self.clock.cycles += 3;
