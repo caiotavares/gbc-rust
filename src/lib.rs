@@ -1,8 +1,8 @@
 pub mod cpu;
-pub mod memory;
-pub mod instructions;
-pub mod sound;
 pub mod gpu;
+pub mod instructions;
+pub mod memory;
+pub mod sound;
 
 pub const _128KB: usize = 128 * _1KB;
 pub const _64KB: usize = 64 * _1KB;
@@ -23,7 +23,7 @@ pub fn unsigned_16(lsb: u8, msb: u8) -> u16 {
 }
 
 pub trait Splitable {
-    fn split(&self) -> (u8,u8);
+    fn split(&self) -> (u8, u8);
 }
 
 impl Splitable for u16 {
