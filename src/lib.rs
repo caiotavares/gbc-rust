@@ -1,5 +1,5 @@
 pub mod cpu;
-pub mod gpu;
+pub mod ppu;
 pub mod instructions;
 pub mod memory;
 pub mod sound;
@@ -13,11 +13,7 @@ pub const _4KB: usize = 4 * _1KB;
 pub const _2KB: usize = 2 * _1KB;
 pub const _1KB: usize = 1024;
 
-pub const Hz: usize = 1;
-pub const kHz: usize = 1024 * Hz;
-pub const MHz: usize = 1024 * kHz;
-
-pub fn unsigned_16(lsb: u8, msb: u8) -> u16 {
+pub fn as_u16(lsb: u8, msb: u8) -> u16 {
     let value: u16 = 0x0000;
     (value | (lsb as u16)) | ((msb as u16) << 8)
 }

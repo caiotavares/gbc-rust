@@ -1,6 +1,6 @@
-use crate::*;
-use crate::memory::Memory;
 use crate::instructions::Instruction;
+use crate::memory::Memory;
+use crate::*;
 
 const CLOCK: f32 = 8.388608;
 
@@ -25,7 +25,7 @@ impl Registers {
     pub fn init() -> Registers {
         /// Initial values for registers obtained from Pandocs
         Registers {
-            a: 0x01,
+            a: 0x11,
             f: 0xB0,
             b: 0x00,
             c: 0x13,
@@ -44,19 +44,19 @@ impl Registers {
     }
 
     pub fn read_af(&self) -> u16 {
-        unsigned_16(self.f, self.a)
+        as_u16(self.f, self.a)
     }
 
     pub fn read_bc(&self) -> u16 {
-        unsigned_16(self.c, self.b)
+        as_u16(self.c, self.b)
     }
 
     pub fn read_de(&self) -> u16 {
-        unsigned_16(self.e, self.d)
+        as_u16(self.e, self.d)
     }
 
     pub fn read_hl(&self) -> u16 {
-        unsigned_16(self.l, self.h)
+        as_u16(self.l, self.h)
     }
 
     pub fn write_af(&mut self, data: u16) {
@@ -86,13 +86,20 @@ impl Registers {
 
 struct Clock {
     cycles: u8,
-    clock_speed: usize
+    clock_speed: usize,
 }
 
 impl Clock {
     pub fn init() -> Clock {
-        Clock { cycles: 0, clock_speed: CLOCK as usize }
+        Clock {
+            cycles: 0,
+            clock_speed: CLOCK as usize,
+        }
     }
+}
+
+struct ALU {
+    
 }
 
 pub struct CPU {
@@ -115,8 +122,18 @@ impl CPU {
         loop {
             let data = self.fetch();
             let ins = Instruction::decode(data);
-            self.execute(ins);
+            if ins == Instruction::STOP {
+                break;
+            } else {
+                self.execute(ins);
+            }
         }
+    }
+
+    fn add(&mut self ) {
+        self.registers.
+
+
     }
 
     fn fetch(&mut self) -> u8 {
@@ -127,11 +144,12 @@ impl CPU {
 
     fn execute(&mut self, ins: Instruction) {
         match ins {
-            Instruction::NOP => {
-                self.clock.cycles += 1
-            }
+            Instruction::NOP => self.clock.cycles += 1,
 
-            Instruction::STOP => {}
+            Instruction::LD_A_u8 => {
+                self.registers.a = self.fetch();
+                self.clock.cycles += 2;
+            }
 
             Instruction::LD_B_u8 => {
                 self.registers.b = self.fetch();
@@ -140,17 +158,6 @@ impl CPU {
 
             Instruction::LD_C_u8 => {
                 self.registers.c = self.fetch();
-                self.clock.cycles += 2;
-            }
-
-            Instruction::LD_BC_u16 => {
-                let data = unsigned_16(self.fetch(), self.fetch());
-                self.registers.write_bc(data);
-                self.clock.cycles += 3;
-            }
-
-            Instruction::LD_BC_A => {
-                self.memory.write(self.registers.read_bc(), self.registers.a);
                 self.clock.cycles += 2;
             }
 
@@ -164,21 +171,51 @@ impl CPU {
                 self.clock.cycles += 2;
             }
 
+            Instruction::LD_H_u8 => {
+                self.registers.h = self.fetch();
+                self.clock.cycles += 2;
+            }
+
+            Instruction::LD_L_u8 => {
+                self.registers.l = self.fetch();
+                self.clock.cycles += 2;
+            }
+
+            Instruction::LD_BC_u16 => {
+                let data = as_u16(self.fetch(), self.fetch());
+                self.registers.write_bc(data);
+                self.clock.cycles += 3;
+            }
+
             Instruction::LD_DE_u16 => {
-                let data = unsigned_16(self.fetch(), self.fetch());
+                let data = as_u16(self.fetch(), self.fetch());
                 self.registers.write_de(data);
                 self.clock.cycles += 3;
             }
 
+            Instruction::LD_HL_u16 => {
+                let data = as_u16(self.fetch(), self.fetch());
+                self.registers.write_hl(data);
+                self.clock.cycles += 3;
+            }
+
+            Instruction::LD_BC_A => {
+                self.memory
+                    .write(self.registers.read_bc(), self.registers.a);
+                self.clock.cycles += 2;
+            }
+
             Instruction::LD_DE_A => {
-                self.memory.write(self.registers.read_de(), self.registers.a);
+                self.memory
+                    .write(self.registers.read_de(), self.registers.a);
                 self.clock.cycles += 2;
             }
 
             Instruction::INC_E => {
                 if self.registers.e == 0xFF {
                     self.registers.e = 0x00;
-                    self.registers.set_flags(Some(true), Some(false), Some(true), None);
+                    self.registers
+                        .set_flags(Some(true), Some(false), Some(true), None);
                 } else {
                     self.registers.e += 1;
                     self.registers.set_flags(None, Some(false), None, None);

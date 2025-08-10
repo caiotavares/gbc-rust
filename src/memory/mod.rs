@@ -1,9 +1,7 @@
-use crate::{_32KB, _8KB, _4KB};
+pub mod io;
 
-pub struct IO {
-    memory_range: [u8; 127],
-    // TODO: Set each peripheral its own memory address
-}
+use crate::memory::io::IO;
+use crate::{_32KB, _4KB, _8KB};
 
 #[derive(Debug)]
 pub struct Memory {
@@ -18,8 +16,7 @@ pub struct Memory {
     /// 0xD000 ~ 0xDFFF WRAM
     wram2: [u8; _4KB],
     // 0xFF00 ~ 0xFF7F I/O Registers
-    // io: [u8; 127],
-
+    io: IO,
 }
 
 impl Memory {
@@ -31,14 +28,20 @@ impl Memory {
             ram: [0; _32KB],
             wram1: [0; _4KB],
             wram2: [0; _4KB],
+            io: IO::init(),
         }
     }
 
     pub fn read(&self, address: u16) -> u8 {
-        // TODO: Read access to some regions should be protected
+        // TODO: Should read access to some regions be protected?
         match address {
             0x0000..=0x7FFF => self.rom[address as usize],
-            _ => self.ram[address as usize]
+            0x8000..=0x9FFF => self.vram[address as usize - 0x8000],
+            0xA000..=0xBFFF => self.ram[address as usize - 0xA000],
+            0xC000..=0xCFFF => self.wram1[address as usize - 0xC000],
+            0xD000..=0xDFFF => self.wram2[address as usize - 0xD000],
+            0xFF00..=0xFF7F => self.io.read(address as usize),
+            _ => panic!("Forbidden read from memory address: 0x{:04X}", address),
         }
     }
 
@@ -47,7 +50,7 @@ impl Memory {
         match address {
             // ROM data
             0x0000..=0x7FFF => panic!("Forbidden write into ROM memory region!"),
-            _ => self.ram[address as usize] = data
+            _ => self.ram[address as usize] = data,
         }
     }
 }

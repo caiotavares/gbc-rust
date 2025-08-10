@@ -1,6 +1,7 @@
 #![allow(non_camel_case_types)]
 
 #[derive(Debug)]
+#[derive(PartialEq)]
 pub enum Instruction {
     // x8/lsm
     LD_A_u8,

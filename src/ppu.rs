@@ -2,6 +2,6 @@ struct Registers {
 
 }
 
-struct GPU {
+struct PPU {
     registers: Registers
 }
