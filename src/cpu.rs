@@ -4,83 +4,52 @@ use crate::*;
 
 const CLOCK: f32 = 8.388608;
 
+enum RegEnum {
+    AF,
+    BC,
+    DE,
+    HL,
+    SP,
+    PC,
+}
+
 #[derive(Debug)]
 struct Registers {
-    a: u8,
-    /// Flags register
-    f: u8,
-    b: u8,
-    c: u8,
-    d: u8,
-    e: u8,
-    h: u8,
-    l: u8,
-    /// Program Counter
-    pc: u16,
-    /// Stack Pointer
-    sp: u16,
+    af: u16, // Accumulator & Flags register
+    bc: u16,
+    de: u16,
+    hl: u16,
+    sp: u16, // Stack Pointer
+    pc: u16, // Program Counter
 }
 
 impl Registers {
     pub fn init() -> Registers {
-        /// Initial values for registers obtained from Pandocs
+        // Initial values for registers obtained from Pandocs
         Registers {
-            a: 0x11,
-            f: 0xB0,
-            b: 0x00,
-            c: 0x13,
-            d: 0x00,
-            e: 0xD8,
-            h: 0x01,
-            l: 0x4D,
+            af: 0x1180,
+            bc: 0x0000,
+            de: 0xFF56,
+            hl: 0x000D,
             pc: 0x0100, // ROM data starts at 0x0100, ignoring the bootloader checks
             sp: 0xFFFE,
         }
     }
 
     pub fn set_flags(&self, z: Option<bool>, n: Option<bool>, h: Option<bool>, c: Option<bool>) {
-        let current_state = self.f;
+        let current_state = self.af.split().1;
         let new_state: u8 = 0x00;
     }
 
-    pub fn read_af(&self) -> u16 {
-        as_u16(self.f, self.a)
-    }
-
-    pub fn read_bc(&self) -> u16 {
-        as_u16(self.c, self.b)
-    }
-
-    pub fn read_de(&self) -> u16 {
-        as_u16(self.e, self.d)
-    }
-
-    pub fn read_hl(&self) -> u16 {
-        as_u16(self.l, self.h)
-    }
-
-    pub fn write_af(&mut self, data: u16) {
-        let u8s = data.split();
-        self.f = u8s.0;
-        self.a = u8s.1;
-    }
-
-    pub fn write_bc(&mut self, data: u16) {
-        let u8s = data.split();
-        self.c = u8s.0;
-        self.b = u8s.1;
-    }
-
-    pub fn write_de(&mut self, data: u16) {
-        let u8s = data.split();
-        self.e = u8s.0;
-        self.d = u8s.1;
-    }
-
-    pub fn write_hl(&mut self, data: u16) {
-        let u8s = data.split();
-        self.l = u8s.0;
-        self.h = u8s.1;
+    pub fn from_enum(&mut self, reg: RegEnum) -> &mut u16 {
+        match reg {
+            RegEnum::AF => &mut self.af,
+            RegEnum::BC => &mut self.bc,
+            RegEnum::DE => &mut self.de,
+            RegEnum::HL => &mut self.hl,
+            RegEnum::SP => &mut self.sp,
+            RegEnum::PC => &mut self.pc,
+        }
     }
 }
 
@@ -98,9 +67,7 @@ impl Clock {
     }
 }
 
-struct ALU {
-    
-}
+struct ALU {}
 
 pub struct CPU {
     memory: Memory,
@@ -130,97 +97,78 @@ impl CPU {
         }
     }
 
-    fn add(&mut self ) {
-        self.registers.
+    fn add_r8_r8(&mut self, source: u8, dest: &mut u8) {}
 
-
+    fn inc_r8(&mut self) {
+        if *reg == 0xFF {
+            *reg = 0x00;
+            self.registers
+                .set_flags(Some(true), Some(false), Some(true), None);
+        } else {
+            *reg += 1;
+            self.registers.set_flags(None, Some(false), None, None);
+        }
+        self.clock.cycles += 1;
     }
 
-    fn fetch(&mut self) -> u8 {
-        let data = self.memory.read(self.registers.pc);
-        self.registers.pc += 1;
+    fn load_r8_lsb(&mut self, reg: RegEnum) {
+        let data = CPU::fetch(&mut self.registers.pc, &self.memory);
+        let register = self.registers.from_enum(reg);
+        *register = *register | (data as u16);
+        self.clock.cycles += 2;
+    }
+
+    fn load_r8_msb(&mut self, reg: RegEnum) {
+        let data = CPU::fetch(&mut self.registers.pc, &self.memory);
+        let register = self.registers.from_enum(reg);
+        *register = *register | ((data as u16) << 8);
+        self.clock.cycles += 2;
+    }
+
+    fn load_r16(&mut self, reg: &mut u16) {
+        let lsb = CPU::fetch(&mut self.registers.pc, &self.memory);
+        let msb = CPU::fetch(&mut self.registers.pc, &self.memory);
+        *reg = as_u16(lsb, msb);
+        self.clock.cycles += 3;
+    }
+
+    fn fetch(pc: &mut u16, memory: &Memory) -> u8 {
+        let data = memory.read(*pc);
+        *pc += 1;
         data
     }
 
     fn execute(&mut self, ins: Instruction) {
         match ins {
+            // Control
             Instruction::NOP => self.clock.cycles += 1,
+            // Load 8 bits
+            Instruction::LD_A_u8 => self.load_r8_lsb(RegEnum::AF),
+            Instruction::LD_B_u8 => self.load_r8_lsb(RegEnum::BC),
+            Instruction::LD_C_u8 => self.load_r8_msb(RegEnum::BC),
+            Instruction::LD_D_u8 => self.load_r8_lsb(RegEnum::DE),
+            Instruction::LD_E_u8 => self.load_r8_msb(RegEnum::DE),
+            Instruction::LD_H_u8 => self.load_r8_lsb(RegEnum::HL),
+            Instruction::LD_L_u8 => self.load_r8_msb(RegEnum::HL),
 
-            Instruction::LD_A_u8 => {
-                self.registers.a = self.fetch();
-                self.clock.cycles += 2;
-            }
+            // Load 16 bits
+            Instruction::LD_BC_u16 => self.load_r16(&mut self.registers.bc),
+            Instruction::LD_DE_u16 => self.load_r16(&mut self.registers.de),
+            Instruction::LD_HL_u16 => self.load_r16(&mut self.registers.hl),
 
-            Instruction::LD_B_u8 => {
-                self.registers.b = self.fetch();
-                self.clock.cycles += 2;
-            }
-
-            Instruction::LD_C_u8 => {
-                self.registers.c = self.fetch();
-                self.clock.cycles += 2;
-            }
-
-            Instruction::LD_D_u8 => {
-                self.registers.d = self.fetch();
-                self.clock.cycles += 2;
-            }
-
-            Instruction::LD_E_u8 => {
-                self.registers.e = self.fetch();
-                self.clock.cycles += 2;
-            }
-
-            Instruction::LD_H_u8 => {
-                self.registers.h = self.fetch();
-                self.clock.cycles += 2;
-            }
-
-            Instruction::LD_L_u8 => {
-                self.registers.l = self.fetch();
-                self.clock.cycles += 2;
-            }
-
-            Instruction::LD_BC_u16 => {
-                let data = as_u16(self.fetch(), self.fetch());
-                self.registers.write_bc(data);
-                self.clock.cycles += 3;
-            }
-
-            Instruction::LD_DE_u16 => {
-                let data = as_u16(self.fetch(), self.fetch());
-                self.registers.write_de(data);
-                self.clock.cycles += 3;
-            }
-
-            Instruction::LD_HL_u16 => {
-                let data = as_u16(self.fetch(), self.fetch());
-                self.registers.write_hl(data);
-                self.clock.cycles += 3;
-            }
+            // INC
+            Instruction::INC_E => self.inc_r8(&mut self.registers.de.split().0),
 
             Instruction::LD_BC_A => {
                 self.memory
-                    .write(self.registers.read_bc(), self.registers.a);
+                    .write(self.registers.bc, self.registers.af.split().0);
                 self.clock.cycles += 2;
             }
 
             Instruction::LD_DE_A => {
                 self.memory
-                    .write(self.registers.read_de(), self.registers.a);
+                    .write(self.registers.de, self.registers.af.split().0);
                 self.clock.cycles += 2;
-            }
-
-            Instruction::INC_E => {
-                if self.registers.e == 0xFF {
-                    self.registers.e = 0x00;
-                    self.registers
-                        .set_flags(Some(true), Some(false), Some(true), None);
-                } else {
-                    self.registers.e += 1;
-                    self.registers.set_flags(None, Some(false), None, None);
-                }
-                self.clock.cycles += 1;
             }
 
             Instruction::Invalid => {}
