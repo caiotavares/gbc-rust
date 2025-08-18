@@ -4,7 +4,7 @@ use crate::*;
 
 const CLOCK: f32 = 8.388608;
 
-enum RegEnum {
+enum Register {
     AF,
     BC,
     DE,
@@ -41,14 +41,14 @@ impl Registers {
         let new_state: u8 = 0x00;
     }
 
-    pub fn from_enum(&mut self, reg: RegEnum) -> &mut u16 {
+    pub fn from_enum(&mut self, reg: Register) -> &mut u16 {
         match reg {
-            RegEnum::AF => &mut self.af,
-            RegEnum::BC => &mut self.bc,
-            RegEnum::DE => &mut self.de,
-            RegEnum::HL => &mut self.hl,
-            RegEnum::SP => &mut self.sp,
-            RegEnum::PC => &mut self.pc,
+            Register::AF => &mut self.af,
+            Register::BC => &mut self.bc,
+            Register::DE => &mut self.de,
+            Register::HL => &mut self.hl,
+            Register::SP => &mut self.sp,
+            Register::PC => &mut self.pc,
         }
     }
 }
@@ -111,14 +111,14 @@ impl CPU {
         self.clock.cycles += 1;
     }
 
-    fn load_r8_lsb(&mut self, reg: RegEnum) {
+    fn load_r8_lsb(&mut self, reg: Register) {
         let data = CPU::fetch(&mut self.registers.pc, &self.memory);
         let register = self.registers.from_enum(reg);
         *register = *register | (data as u16);
         self.clock.cycles += 2;
     }
 
-    fn load_r8_msb(&mut self, reg: RegEnum) {
+    fn load_r8_msb(&mut self, reg: Register) {
         let data = CPU::fetch(&mut self.registers.pc, &self.memory);
         let register = self.registers.from_enum(reg);
         *register = *register | ((data as u16) << 8);
@@ -143,13 +143,13 @@ impl CPU {
             // Control
             Instruction::NOP => self.clock.cycles += 1,
             // Load 8 bits
-            Instruction::LD_A_u8 => self.load_r8_lsb(RegEnum::AF),
-            Instruction::LD_B_u8 => self.load_r8_lsb(RegEnum::BC),
-            Instruction::LD_C_u8 => self.load_r8_msb(RegEnum::BC),
-            Instruction::LD_D_u8 => self.load_r8_lsb(RegEnum::DE),
-            Instruction::LD_E_u8 => self.load_r8_msb(RegEnum::DE),
-            Instruction::LD_H_u8 => self.load_r8_lsb(RegEnum::HL),
-            Instruction::LD_L_u8 => self.load_r8_msb(RegEnum::HL),
+            Instruction::LD_A_u8 => self.load_r8_lsb(Register::AF),
+            Instruction::LD_B_u8 => self.load_r8_lsb(Register::BC),
+            Instruction::LD_C_u8 => self.load_r8_msb(Register::BC),
+            Instruction::LD_D_u8 => self.load_r8_lsb(Register::DE),
+            Instruction::LD_E_u8 => self.load_r8_msb(Register::DE),
+            Instruction::LD_H_u8 => self.load_r8_lsb(Register::HL),
+            Instruction::LD_L_u8 => self.load_r8_msb(Register::HL),
 
             // Load 16 bits
             Instruction::LD_BC_u16 => self.load_r16(&mut self.registers.bc),
