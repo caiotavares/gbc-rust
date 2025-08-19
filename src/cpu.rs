@@ -36,7 +36,7 @@ impl Registers {
         }
     }
 
-    pub fn set_flags(&self, z: Option<bool>, n: Option<bool>, h: Option<bool>, c: Option<bool>) {
+    pub fn set_flags(&mut self, z: Option<bool>, n: Option<bool>, h: Option<bool>, c: Option<bool>) {
         let current_state = self.af.split().1;
         let new_state: u8 = 0x00;
     }
@@ -87,7 +87,7 @@ impl CPU {
     pub fn init(&mut self) {
         /// TODO: Should this be constrained according to CPU clock?
         loop {
-            let data = self.fetch();
+            let data = CPU::fetch(&mut self.registers.pc, &self.memory);
             let ins = Instruction::decode(data);
             if ins == Instruction::STOP {
                 break;
@@ -99,9 +99,34 @@ impl CPU {
 
     fn add_r8_r8(&mut self, source: u8, dest: &mut u8) {}
 
-    fn inc_r8(&mut self) {
-        if *reg == 0xFF {
-            *reg = 0x00;
+    fn inc_r8(data: u8) -> u8 {
+        let result: u8;
+        if data == 0xFF {
+            result = 0x00;
+        } else {
+            result = data + 1;
+        }
+        result
+    }
+
+    fn inc_r8_lsb(&mut self, reg: Register) {
+        let register = self.registers.from_enum(reg);
+        let lsb = register.split().0;
+        let new = CPU::inc_r8(lsb);
+        if new == 0x00 {
+            self.registers
+                .set_flags(Some(true), Some(false), Some(true), None);
+        } else {
+            self.registers.set_flags(None, Some(false), None, None);
+        }
+        *register = *register | (new as u16);
+        self.clock.cycles += 1;
+    }
+
+    fn inc_r8_msb(&mut self, reg: Register) {
+        let register = self.registers.from_enum(reg);
+        if *register == 0xFF {
+            *register = 0x00;
             self.registers
                 .set_flags(Some(true), Some(false), Some(true), None);
         } else {
@@ -125,10 +150,11 @@ impl CPU {
         self.clock.cycles += 2;
     }
 
-    fn load_r16(&mut self, reg: &mut u16) {
+    fn load_r16(&mut self, reg: Register) {
         let lsb = CPU::fetch(&mut self.registers.pc, &self.memory);
         let msb = CPU::fetch(&mut self.registers.pc, &self.memory);
-        *reg = as_u16(lsb, msb);
+        let register = self.registers.from_enum(reg);
+        *register = as_u16(lsb, msb);
         self.clock.cycles += 3;
     }
 
@@ -152,12 +178,12 @@ impl CPU {
             Instruction::LD_L_u8 => self.load_r8_msb(Register::HL),
 
             // Load 16 bits
-            Instruction::LD_BC_u16 => self.load_r16(&mut self.registers.bc),
-            Instruction::LD_DE_u16 => self.load_r16(&mut self.registers.de),
-            Instruction::LD_HL_u16 => self.load_r16(&mut self.registers.hl),
+            Instruction::LD_BC_u16 => self.load_r16(Register::BC),
+            Instruction::LD_DE_u16 => self.load_r16(Register::DE),
+            Instruction::LD_HL_u16 => self.load_r16(Register::HL),
 
             // INC
-            Instruction::INC_E => self.inc_r8(&mut self.registers.de.split().0),
+            Instruction::INC_E => self.inc_r8_msb(Register::DE),
 
             Instruction::LD_BC_A => {
                 self.memory
