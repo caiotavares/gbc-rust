@@ -91,7 +91,7 @@ impl CPU {
     }
 
     pub fn init(&mut self) {
-        /// TODO: Should this be constrained according to CPU clock?
+        // TODO: Should this be constrained according to CPU clock?
         loop {
             let data = CPU::fetch(&mut self.registers.pc, &self.memory);
             let ins = Instruction::decode(data);
@@ -191,6 +191,10 @@ impl CPU {
         match ins {
             // Control
             Instruction::NOP => self.clock.cycles += 1,
+            Instruction::CB => {
+                let next_byte = CPU::fetch(&mut self.registers.pc, &self.memory);
+                self.execute(Instruction::decode_cb(next_byte));
+            }
             // Load 8 bits
             Instruction::LD_A_u8 => self.load_r8_lsb(Register::AF),
             Instruction::LD_B_u8 => self.load_r8_lsb(Register::BC),
