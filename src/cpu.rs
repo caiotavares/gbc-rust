@@ -105,9 +105,9 @@ impl CPU {
 
     fn inc_r8_lsb(&mut self, reg: Register) {
         let register = self.registers.from_enum(reg);
-        let mut lsb = register.split().0;
-        lsb = if lsb == 0xFF { 0x00 } else { lsb + 1 };
-        *register = *register & ((lsb as u16) << 8);
+        let (mut lsb, mut msb) = register.split();
+        // *register = if lsb == 0xFF { 0x00 &  } else { lsb + 1 };
+        //  = *register & ((lsb as u16) << 8);
         if lsb == 0x00 {
             self.registers
                 .set_flags(Some(true), Some(false), Some(true), None);
@@ -130,6 +130,15 @@ impl CPU {
         }
         self.clock.cycles += 1;
     }
+
+    fn dec_r8_lsb(&mut self, reg: Register) {
+        let register = self.registers.from_enum(reg);
+        let mut lsb = register.split().0;
+        lsb = if lsb == 0x00 { 0xFF } else { lsb - 1 };
+        // *register = *register & 
+    }
+
+    fn dec_r8_msb(&mut self, reg: Register) {}
 
     fn load_r8_lsb(&mut self, reg: Register) {
         let data = CPU::fetch(&mut self.registers.pc, &self.memory);
@@ -177,7 +186,7 @@ impl CPU {
             Instruction::LD_DE_u16 => self.load_r16(Register::DE),
             Instruction::LD_HL_u16 => self.load_r16(Register::HL),
 
-            // INC
+            // ALU 8 bits
             Instruction::INC_A => self.inc_r8_lsb(Register::AF),
             Instruction::INC_B => self.inc_r8_lsb(Register::BC),
             Instruction::INC_C => self.inc_r8_msb(Register::BC),
@@ -185,6 +194,13 @@ impl CPU {
             Instruction::INC_E => self.inc_r8_msb(Register::DE),
             Instruction::INC_H => self.inc_r8_lsb(Register::HL),
             Instruction::INC_L => self.inc_r8_msb(Register::HL),
+            Instruction::DEC_A => self.dec_r8_lsb(Register::AF),
+            Instruction::DEC_B => self.dec_r8_lsb(Register::BC),
+            Instruction::DEC_C => self.dec_r8_msb(Register::BC),
+            Instruction::DEC_D => self.dec_r8_lsb(Register::DE),
+            Instruction::DEC_E => self.dec_r8_msb(Register::DE),
+            Instruction::DEC_H => self.dec_r8_lsb(Register::HL),
+            Instruction::DEC_L => self.dec_r8_msb(Register::HL),
 
             Instruction::LD_BC_A => {
                 self.memory

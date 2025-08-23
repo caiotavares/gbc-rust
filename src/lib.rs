@@ -1,7 +1,7 @@
 pub mod cpu;
-pub mod ppu;
 pub mod instructions;
 pub mod memory;
+pub mod ppu;
 pub mod sound;
 
 pub const _128KB: usize = 128 * _1KB;
@@ -27,5 +27,26 @@ impl Splitable for u16 {
         let msb: u8 = (self >> 8) as u8;
         let lsb: u8 = *self as u8;
         (lsb, msb)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_as_u16() {
+        let lsb: u8 = 0x1F;
+        let msb: u8 = 0x25;
+        let word: u16 = as_u16(lsb, msb);
+        assert_eq!(word, 0x251F);
+    }
+
+    #[test]
+    fn test_split_u16() {
+        let lsb: u8 = 0x1F;
+        let msb: u8 = 0x25;
+        let word: u16 = as_u16(lsb, msb);
+        assert_eq!((0x1F, 0x25), word.split());
     }
 }
