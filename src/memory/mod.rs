@@ -20,6 +20,17 @@ pub struct Memory {
 }
 
 impl Memory {
+    pub fn empty() -> Memory {
+        Memory {
+            rom: [0; _32KB],
+            vram: [0; _8KB],
+            ram: [0; _32KB],
+            wram1: [0; _4KB],
+            wram2: [0; _4KB],
+            io: IO::init(),
+        }
+    }
+
     pub fn new(program: [u8; _32KB]) -> Memory {
         Memory {
             // TODO: Should we use Vec<u8> instead of [u8; _32KB]?

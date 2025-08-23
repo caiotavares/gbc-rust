@@ -105,40 +105,59 @@ impl CPU {
 
     fn inc_r8_lsb(&mut self, reg: Register) {
         let register = self.registers.from_enum(reg);
-        let (mut lsb, mut msb) = register.split();
-        // *register = if lsb == 0xFF { 0x00 &  } else { lsb + 1 };
-        //  = *register & ((lsb as u16) << 8);
-        if lsb == 0x00 {
+        let (lsb, msb) = register.split();
+        if lsb == 0xFF {
+            *register = as_u16(0x00, msb);
             self.registers
                 .set_flags(Some(true), Some(false), Some(true), None);
         } else {
+            *register = as_u16(lsb + 1, msb);
             self.registers.set_flags(None, Some(false), None, None);
-        }
+        };
         self.clock.cycles += 1;
     }
 
     fn inc_r8_msb(&mut self, reg: Register) {
         let register = self.registers.from_enum(reg);
-        let mut msb = register.split().1;
-        msb = if msb == 0xFF { 0x00 } else { msb + 1 };
-        *register = *register & (msb as u16);
-        if msb == 0x00 {
+        let (lsb, msb) = register.split();
+        if msb == 0xFF {
+            *register = as_u16(lsb, 0x00);
             self.registers
                 .set_flags(Some(true), Some(false), Some(true), None);
         } else {
+            *register = as_u16(lsb, msb + 1);
             self.registers.set_flags(None, Some(false), None, None);
-        }
+        };
         self.clock.cycles += 1;
     }
 
     fn dec_r8_lsb(&mut self, reg: Register) {
         let register = self.registers.from_enum(reg);
-        let mut lsb = register.split().0;
-        lsb = if lsb == 0x00 { 0xFF } else { lsb - 1 };
-        // *register = *register & 
+        let (lsb, msb) = register.split();
+        if lsb == 0x00 {
+            *register = as_u16(0xFF, msb);
+            self.registers
+                .set_flags(Some(true), Some(false), Some(true), None);
+        } else {
+            *register = as_u16(lsb - 1, msb);
+            self.registers.set_flags(None, Some(false), None, None);
+        };
+        self.clock.cycles += 1;
     }
 
-    fn dec_r8_msb(&mut self, reg: Register) {}
+    fn dec_r8_msb(&mut self, reg: Register) {
+        let register = self.registers.from_enum(reg);
+        let (lsb, msb) = register.split();
+        if msb == 0x00 {
+            *register = as_u16(lsb, 0xFF);
+            self.registers
+                .set_flags(Some(true), Some(false), Some(true), None);
+        } else {
+            *register = as_u16(lsb, msb - 1);
+            self.registers.set_flags(None, Some(false), None, None);
+        };
+        self.clock.cycles += 1;
+    }
 
     fn load_r8_lsb(&mut self, reg: Register) {
         let data = CPU::fetch(&mut self.registers.pc, &self.memory);
@@ -218,5 +237,78 @@ impl CPU {
 
             _ => {}
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn new_test_cpu() -> CPU {
+        CPU {
+            memory: Memory::empty(),
+            clock: Clock {
+                cycles: 0,
+                clock_speed: 0,
+            },
+            registers: Registers {
+                af: 0x0000,
+                bc: 0x0000,
+                de: 0x0000,
+                hl: 0x0000,
+                sp: 0x0000,
+                pc: 0x0000,
+            },
+        }
+    }
+
+    #[test]
+    fn test_alu_r8() {
+        let mut cpu = new_test_cpu();
+        assert_eq!(cpu.registers.bc, 0x0000);
+        cpu.inc_r8_lsb(Register::BC);
+        assert_eq!(cpu.registers.bc, 0x0001);
+        cpu.inc_r8_msb(Register::BC);
+        assert_eq!(cpu.registers.bc, 0x0101);
+        cpu.dec_r8_msb(Register::BC);
+        assert_eq!(cpu.registers.bc, 0x0001);
+        cpu.dec_r8_lsb(Register::BC);
+        assert_eq!(cpu.registers.bc, 0x0000);
+    }
+
+    // TODO: Assert flags being set
+    #[test]
+    fn test_alu_r8_overflow() {
+        let mut cpu = new_test_cpu();
+        let bc = cpu.registers.from_enum(Register::BC);
+        *bc = 0xFFFF;
+        assert_eq!(cpu.registers.bc, 0xFFFF);
+        cpu.inc_r8_lsb(Register::BC);
+        assert_eq!(cpu.registers.bc, 0xFF00);
+        cpu.inc_r8_msb(Register::BC);
+        assert_eq!(cpu.registers.bc, 0x0000);
+        cpu.dec_r8_lsb(Register::BC);
+        assert_eq!(cpu.registers.bc, 0x00FF);
+        cpu.dec_r8_msb(Register::BC);
+        assert_eq!(cpu.registers.bc, 0xFFFF);
+    }
+
+    #[test]
+    fn test_from_enum() {
+        let mut cpu = new_test_cpu();
+        cpu.registers = Registers {
+            af: 0x0001,
+            bc: 0x0002,
+            de: 0x0003,
+            hl: 0x0004,
+            sp: 0x0005,
+            pc: 0x0006,
+        };
+        assert_eq!(*cpu.registers.from_enum(Register::AF), 0x0001);
+        assert_eq!(*cpu.registers.from_enum(Register::BC), 0x0002);
+        assert_eq!(*cpu.registers.from_enum(Register::DE), 0x0003);
+        assert_eq!(*cpu.registers.from_enum(Register::HL), 0x0004);
+        assert_eq!(*cpu.registers.from_enum(Register::SP), 0x0005);
+        assert_eq!(*cpu.registers.from_enum(Register::PC), 0x0006);
     }
 }
