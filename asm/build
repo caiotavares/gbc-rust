@@ -16,3 +16,4 @@ fi
 rgbasm -o $filename.o $filename.asm
 rgblink -o $filename.gb $filename.o
 rgbfix -v -p 0xFF $filename.gb
+rm $filename.o
