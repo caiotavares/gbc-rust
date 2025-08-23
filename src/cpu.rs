@@ -36,7 +36,13 @@ impl Registers {
         }
     }
 
-    pub fn set_flags(&mut self, z: Option<bool>, n: Option<bool>, h: Option<bool>, c: Option<bool>) {
+    pub fn set_flags(
+        &mut self,
+        z: Option<bool>,
+        n: Option<bool>,
+        h: Option<bool>,
+        c: Option<bool>,
+    ) {
         let current_state = self.af.split().1;
         let new_state: u8 = 0x00;
     }
@@ -97,40 +103,29 @@ impl CPU {
         }
     }
 
-    fn add_r8_r8(&mut self, source: u8, dest: &mut u8) {}
-
-    fn inc_r8(data: u8) -> u8 {
-        let result: u8;
-        if data == 0xFF {
-            result = 0x00;
-        } else {
-            result = data + 1;
-        }
-        result
-    }
-
     fn inc_r8_lsb(&mut self, reg: Register) {
         let register = self.registers.from_enum(reg);
-        let lsb = register.split().0;
-        let new = CPU::inc_r8(lsb);
-        if new == 0x00 {
+        let mut lsb = register.split().0;
+        lsb = if lsb == 0xFF { 0x00 } else { lsb + 1 };
+        *register = *register & ((lsb as u16) << 8);
+        if lsb == 0x00 {
             self.registers
                 .set_flags(Some(true), Some(false), Some(true), None);
         } else {
             self.registers.set_flags(None, Some(false), None, None);
         }
-        *register = *register | (new as u16);
         self.clock.cycles += 1;
     }
 
     fn inc_r8_msb(&mut self, reg: Register) {
         let register = self.registers.from_enum(reg);
-        if *register == 0xFF {
-            *register = 0x00;
+        let mut msb = register.split().1;
+        msb = if msb == 0xFF { 0x00 } else { msb + 1 };
+        *register = *register & (msb as u16);
+        if msb == 0x00 {
             self.registers
                 .set_flags(Some(true), Some(false), Some(true), None);
         } else {
-            *reg += 1;
             self.registers.set_flags(None, Some(false), None, None);
         }
         self.clock.cycles += 1;
@@ -183,7 +178,13 @@ impl CPU {
             Instruction::LD_HL_u16 => self.load_r16(Register::HL),
 
             // INC
+            Instruction::INC_A => self.inc_r8_lsb(Register::AF),
+            Instruction::INC_B => self.inc_r8_lsb(Register::BC),
+            Instruction::INC_C => self.inc_r8_msb(Register::BC),
+            Instruction::INC_D => self.inc_r8_lsb(Register::DE),
             Instruction::INC_E => self.inc_r8_msb(Register::DE),
+            Instruction::INC_H => self.inc_r8_lsb(Register::HL),
+            Instruction::INC_L => self.inc_r8_msb(Register::HL),
 
             Instruction::LD_BC_A => {
                 self.memory
