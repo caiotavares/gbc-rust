@@ -1,5 +1,5 @@
-# gbc-rust
-Gameboy Color emulator in Rust
+# gbc
+A Gameboy Color emulator in Rust
 
 ## Purpose
 
